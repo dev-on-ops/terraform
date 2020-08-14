@@ -30,15 +30,13 @@ resource "vsphere_virtual_machine" "vms" {
     eagerly_scrub    = data.vsphere_virtual_machine.template[each.key].disks.0.eagerly_scrub
     thin_provisioned = data.vsphere_virtual_machine.template[each.key].disks.0.thin_provisioned
   }
-
-  #dynamic disk {
-  #  
-  #  label            = "disk0"
-  #  size             = "${data.vsphere_virtual_machine.template[each.key].disks.0.size}"
-  #  eagerly_scrub    = "${data.vsphere_virtual_machine.template[each.key].disks.0.eagerly_scrub}"
-  #  thin_provisioned = "${data.vsphere_virtual_machine.template[each.key].disks.0.thin_provisioned}"
-  #}
-
+/*
+  disk {
+      label            = .label
+      size             = i.size
+      thin_provisioned = i.thin_provisioned
+  }
+*/
   clone {
     template_uuid = data.vsphere_virtual_machine.template[each.key].id
 
