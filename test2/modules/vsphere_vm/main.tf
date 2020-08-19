@@ -30,13 +30,23 @@ resource "vsphere_virtual_machine" "vms" {
     eagerly_scrub    = data.vsphere_virtual_machine.template[each.key].disks.0.eagerly_scrub
     thin_provisioned = data.vsphere_virtual_machine.template[each.key].disks.0.thin_provisioned
   }
-/*
-  disk {
-      label            = .label
-      size             = i.size
-      thin_provisioned = i.thin_provisioned
+
+  dynamic "disk" {
+    for_each = [for disk in each.value.additionaldisks: {
+      disk_size_gb = disk.size
+      disk_index = disk.index
+      disk_thin = disk.thin_provisioned
+      disk_label = disk.label
+    }]
+    content {
+      unit_number = disk.value.disk_index
+      datastore_id = data.vsphere_datastore.datastore[each.key].id
+      label            = disk.value.disk_label
+      size             = disk.value.disk_size_gb
+      thin_provisioned = disk.value.disk_thin
+    }
   }
-*/
+
   clone {
     template_uuid = data.vsphere_virtual_machine.template[each.key].id
 

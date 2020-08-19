@@ -11,7 +11,7 @@ variable "hostname" {
         ipv4_netmask    = number
         ipv4_gateway    = string
         os_disk_size    = number
-        additionaldisks = list(object({label = string, size = number, then_provisioned = bool}))
+        additionaldisks = list(object({label = string, size = number, thin_provisioned = bool, index = number}))
         cpu             = number
         ram             = number 
         tags            = list(string)
