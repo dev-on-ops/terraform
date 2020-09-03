@@ -1,0 +1,53 @@
+hostname = {
+    "foreman01" = {
+        hostname        = "foreman01",
+        datacenter      = "home",
+        datastore       = "vsanDatastore",
+        cluster         = "lab",
+        network         = "10.0.0.0/24"
+        template        = "ubuntu_20",
+        domain          = "lab.bertahome",
+        ipv4_address    = "10.0.0.5",
+        ipv4_netmask    = 24,
+        ipv4_gateway    = "10.0.0.1",
+        os_disk_size    = 40,
+        additionaldisks = [],
+        cpu             = 2,
+        ram             = 8192,
+        tags            = []
+    },
+    "foreman02" = {
+        hostname        = "foreman02",
+        datacenter      = "home",
+        datastore       = "vsanDatastore",
+        cluster         = "lab",
+        network         = "10.0.10.0/24"
+        template        = "ubuntu_20",
+        domain          = "lab.bertahome",
+        ipv4_address    = "10.0.10.5",
+        ipv4_netmask    = 24,
+        ipv4_gateway    = "10.0.10.1",
+        os_disk_size    = 40,
+        additionaldisks = [],
+        cpu             = 2,
+        ram             = 4096,
+        tags            = []
+    },
+    "foreman03" = {
+        hostname        = "foreman03",
+        datacenter      = "home",
+        datastore       = "vsanDatastore",
+        cluster         = "lab",
+        network         = "10.0.20.0/24"
+        template        = "ubuntu_20",
+        domain          = "lab.bertahome",
+        ipv4_address    = "10.0.20.5",
+        ipv4_netmask    = 24,
+        ipv4_gateway    = "10.0.20.1",
+        os_disk_size    = 40,
+        additionaldisks = [],
+        cpu             = 2,
+        ram             = 4096,
+        tags            = []
+    }
+}
