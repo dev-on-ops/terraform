@@ -6,3 +6,6 @@ terraform plan -state=../config/nomad/terrafrom.tfstate -var-file=../config/noma
 
 terraform apply -state=../config/consul/terrafrom.tfstate -var-file=../config/consul/hosts.tfvars 
 terraform plan -state=../config/consul/terrafrom.tfstate -var-file=../config/consul/hosts.tfvars
+
+terraform apply -state=../config/dns/terrafrom.tfstate -var-file=../config/dns/hosts.tfvars 
+terraform plan -state=../config/dns/terrafrom.tfstate -var-file=../config/dns/hosts.tfvars
