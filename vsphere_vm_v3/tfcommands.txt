@@ -1,0 +1,11 @@
+terraform apply -state=../config/vault/terrafrom.tfstate -var-file=../config/vault/hosts.tfvars 
+terraform plan -state=../config/vault/terrafrom.tfstate -var-file=../config/vault/hosts.tfvars 
+
+terraform apply -state=../config/nomad/terrafrom.tfstate -var-file=../config/nomad/hosts.tfvars 
+terraform plan -state=../config/nomad/terrafrom.tfstate -var-file=../config/nomad/hosts.tfvars
+
+terraform apply -state=../config/consul/terrafrom.tfstate -var-file=../config/consul/hosts.tfvars 
+terraform plan -state=../config/consul/terrafrom.tfstate -var-file=../config/consul/hosts.tfvars
+
+terraform apply -state=../config/dns/terrafrom.tfstate -var-file=../config/dns/hosts.tfvars 
+terraform plan -state=../config/dns/terrafrom.tfstate -var-file=../config/dns/hosts.tfvars

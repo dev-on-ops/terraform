@@ -1,0 +1,9 @@
+#cloud-config
+
+users:
+  - name: ubuntu
+    primary_group: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    lock_passwd: false
+    password: $6$Y51G.lTMVE4SDV$YptGYvlzd9MWDItv0pIqoZJxdvosBsE5/hLOiJz66qNl8TwKiCsxwdYwAGD8meUoG6rabI7ya.WSFmpiWC6Th/

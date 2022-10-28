@@ -1,0 +1,15 @@
+instance-id: ${hostname}
+local-hostname: ${hostname}
+network:
+  version: 2
+  ethernets:
+    ens192:
+      addresses:
+        - ${ipv4_address}/${ipv4_netmask}
+      gateway4: ${ipv4_gateway}
+      nameservers:
+        addresses:
+%{ for ip in dns_servers }
+          - ${ip}
+%{ endfor }
+        search: ['dev-on-ops.com']
