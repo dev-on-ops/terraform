@@ -107,3 +107,17 @@ resource "azurerm_virtual_network_peering" "network_peerings" {
   source_network_security_group_id = null
   remote_network_security_group_id = null
 }
+resource "azurerm_public_ip" "example" {
+  name                = "example-public-ip"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_firewall" "example" {
+  name                = "example-firewall"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  public_ip_address_id = azurerm_public_ip.example.id
+}
