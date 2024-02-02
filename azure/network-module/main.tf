@@ -70,3 +70,40 @@ resource "azurerm_virtual_network_peering" "peering" {
   source_network_security_group_id = null
   remote_network_security_group_id = null
 }
+
+
+locals {
+  # Create a list of all network names
+  network_names = keys(local.network_config)
+
+  # Create peerings between all networks
+  virtual_network_peerings = [
+    for source_network_name in local.network_names : 
+    for target_network_name in local.network_names :
+    if source_network_name != target_network_name : {
+      source_virtual_network_name    = local.network_config[source_network_name].virtual_network_name
+      source_resource_group_name     = local.network_config[source_network_name].resource_group_name
+      target_virtual_network_name    = local.network_config[target_network_name].virtual_network_name
+      target_resource_group_name     = local.network_config[target_network_name].resource_group_name
+      source_address_space           = local.network_config[source_network_name].address_space
+      target_address_space           = local.network_config[target_network_name].address_space
+      source_to_target_direction     = "bidirectional"
+    }
+  ]
+}
+
+
+resource "azurerm_virtual_network_peering" "network_peerings" {
+  for_each = { for idx, peering in local.virtual_network_peerings : idx => peering }
+
+  name                         = each.value.source_virtual_network_name != each.value.target_virtual_network_name ? "to-${each.value.target_virtual_network_name}" : null
+  resource_group_name          = each.value.source_resource_group_name
+  virtual_network_name         = each.value.source_virtual_network_name
+  remote_virtual_network_id    = azurerm_virtual_network.target[each.value.target_virtual_network_name].id
+  allow_forwarded_traffic      = false
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+  allow_virtual_network_access = true
+  source_network_security_group_id = null
+  remote_network_security_group_id = null
+}
