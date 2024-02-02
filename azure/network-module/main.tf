@@ -121,3 +121,75 @@ resource "azurerm_firewall" "example" {
   location            = azurerm_resource_group.example.location
   public_ip_address_id = azurerm_public_ip.example.id
 }
+
+#############
+provider "azurerm" {
+  features {}
+}
+
+variable "network_config" {
+  description = "Configuration for each virtual network"
+  type = map(object({
+    resource_group_name  = string
+    location             = string
+    address_space        = list(string)
+    subnets              = map(string)
+    create_firewall      = bool // Added boolean value for Azure Firewall creation
+  }))
+  default = {}
+}
+
+resource "azurerm_public_ip" "firewall" {
+  for_each            = { for name, config in var.network_config : name => config if config.create_firewall }
+  name                = "firewall-pubip-${each.key}"
+  location            = each.value.location
+  resource_group_name = each.value.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_firewall" "firewall" {
+  for_each                = { for name, config in var.network_config : name => config if config.create_firewall }
+  name                    = "firewall-${each.key}"
+  location                = each.value.location
+  resource_group_name     = each.value.resource_group_name
+  public_ip_address_id    = azurerm_public_ip.firewall[each.key].id
+}
+
+resource "azurerm_firewall_network_rule_collection" "firewall_inbound" {
+  for_each                = { for name, config in var.network_config : name => config if config.create_firewall }
+  name                    = "firewall-inbound-${each.key}"
+  resource_group_name     = each.value.resource_group_name
+  firewall_name           = azurerm_firewall.firewall[each.key].name
+
+  rule {
+    name                     = "AllowAll"
+    priority                 = 100
+    action                   = "Allow"
+    source_address_prefix    = "*"
+    destination_address_prefix = "*"
+    destination_port_ranges = ["*"]
+    protocol                 = "*"
+  }
+}
+
+resource "azurerm_firewall_network_rule_collection" "firewall_outbound" {
+  for_each                = { for name, config in var.network_config : name => config if config.create_firewall }
+  name                    = "firewall-outbound-${each.key}"
+  resource_group_name     = each.value.resource_group_name
+  firewall_name           = azurerm_firewall.firewall[each.key].name
+
+  rule {
+    name                     = "AllowInternetOutbound"
+    priority                 = 100
+    action                   = "Allow"
+    source_address_prefix    = "VirtualNetwork"
+    destination_address_prefix = "*"
+    destination_port_ranges = ["*"]
+    protocol                 = "*"
+  }
+}
+
+output "firewall_ids" {
+  value = azurerm_firewall.firewall[*].id
+}
