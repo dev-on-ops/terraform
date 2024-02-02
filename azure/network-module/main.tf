@@ -193,3 +193,69 @@ resource "azurerm_firewall_network_rule_collection" "firewall_outbound" {
 output "firewall_ids" {
   value = azurerm_firewall.firewall[*].id
 }
+
+##################
+provider "azurerm" {
+  features {}
+}
+
+variable "network_config" {
+  description = "Configuration for each virtual network"
+  type = map(object({
+    resource_group_name  = string
+    location             = string
+    address_space        = list(string)
+    subnets              = map(object({
+      address_prefix     = string
+    }))
+    create_firewall      = bool
+  }))
+  default = {}
+}
+
+locals {
+  subnet_route_table_associations = flatten([
+    for network_name, network_info in var.network_config : [
+      for subnet_name, subnet_info in network_info.subnets : {
+        network_name         = network_name
+        subnet_name          = subnet_name
+        route_table_name     = network_info.create_firewall ? "firewall-route-table-${network_name}-${subnet_name}" : null
+      } if network_info.create_firewall
+    ]
+  ])
+}
+
+resource "azurerm_virtual_network" "example" {
+  for_each             = var.network_config
+  name                 = each.key
+  location             = each.value.location
+  resource_group_name  = each.value.resource_group_name
+  address_space        = each.value.address_space
+}
+
+resource "azurerm_subnet" "example" {
+  for_each              = { for subnet in local.subnet_route_table_associations : subnet.subnet_name => subnet }
+  name                  = each.value.subnet_name
+  resource_group_name   = var.network_config[local.subnet_route_table_associations[each.key].network_name].resource_group_name
+  virtual_network_name  = azurerm_virtual_network.example[local.subnet_route_table_associations[each.key].network_name].name
+  address_prefix        = var.network_config[local.subnet_route_table_associations[each.key].network_name].subnets[each.key].address_prefix
+}
+
+resource "azurerm_route_table_association" "example" {
+  for_each              = { for subnet in local.subnet_route_table_associations : subnet.subnet_name => subnet }
+  subnet_id             = azurerm_subnet.example[each.key].id
+  route_table_id        = each.value.route_table_name != null ? azurerm_route_table.example[each.value.route_table_name].id : null
+}
+
+resource "azurerm_route_table" "example" {
+  for_each              = { for subnet in local.subnet_route_table_associations : subnet.subnet_name => subnet if subnet.route_table_name != null }
+  name                  = each.value.route_table_name
+  resource_group_name   = var.network_config[local.subnet_route_table_associations[each.key].network_name].resource_group_name
+  location              = var.network_config[local.subnet_route_table_associations[each.key].network_name].location
+
+  route {
+    name                = "default"
+    address_prefix      = "0.0.0.0/0"
+    next_hop_type       = "Internet"
+  }
+}
