@@ -1,0 +1,50 @@
+# File: azure-pipeline.yml
+
+trigger:
+  branches:
+    include:
+      - '*'
+
+resources:
+  repositories:
+    - repository: c1r1
+      type: git
+      name: your-organization/c1r1
+    - repository: tf-network
+      type: git
+      name: your-organization/tf-network
+
+jobs:
+- job: Terraform
+  displayName: 'Run Terraform'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: true
+
+  - checkout: c1r1
+    path: c1r1
+
+  - checkout: tf-network
+    path: tf-network
+
+  - task: TerraformTaskV1@0
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      backendServiceArm: 'your-azure-backend-service'
+      backendAzureRmResourceGroupName: 'your-rg-name'
+      backendAzureRmStorageAccountName: 'your-storage-account-name'
+      backendAzureRmContainerName: 'your-container-name'
+      backendAzureRmKey: 'terraform.tfstate'
+      workingDirectory: '$(Pipeline.Workspace)/tf-network'
+
+  - task: TerraformTaskV1@0
+    inputs:
+      provider: 'azurerm'
+      command: 'apply'
+      environmentServiceNameAzureRM: 'your-azure-service-connection'
+      workingDirectory: '$(Pipeline.Workspace)/tf-network'
+      commandOptions: '-var-file=$(Pipeline.Workspace)/c1r1/network.tfvars'
