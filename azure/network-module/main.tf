@@ -50,3 +50,23 @@ resource "azurerm_subnet" "subnet" {
   virtual_network_name = azurerm_virtual_network.vnet[each.key].name
   address_prefixes    = [each.value[count.index].address_prefix]
 }
+
+
+# Assuming you already have virtual networks created
+
+resource "azurerm_virtual_network_peering" "peering" {
+  for_each = {
+    for peering in local.virtual_network_peerings : "${peering.source_virtual_network_name}-${peering.target_virtual_network_name}" => peering
+  }
+
+  name                         = each.value.source_virtual_network_name != each.value.target_virtual_network_name ? "to-${each.value.target_virtual_network_name}" : null
+  resource_group_name          = each.value.source_resource_group_name
+  virtual_network_name         = each.value.source_virtual_network_name
+  remote_virtual_network_id    = azurerm_virtual_network.target[each.value.target_virtual_network_name].id
+  allow_forwarded_traffic      = false
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+  allow_virtual_network_access = true
+  source_network_security_group_id = null
+  remote_network_security_group_id = null
+}
