@@ -1,0 +1,80 @@
+trigger:
+  branches:
+    include:
+      - main
+
+stages:
+  - stage: create_shared_image_gallery_and_vm_definition
+    displayName: Create Shared Image Gallery and VM Definition
+    jobs:
+      - job: create_shared_image_gallery_and_vm_definition
+        displayName: Create Shared Image Gallery and VM Definition
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: TerraformInstaller@0
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: 'latest'
+
+          - checkout: self
+
+          - script: |
+              terraform init
+              terraform validate
+              terraform plan -out=tfplan
+            displayName: 'Terraform Init, Validate, Plan'
+
+          - script: |
+              terraform apply -auto-approve tfplan
+            displayName: 'Terraform Apply'
+
+  - stage: packer_build_and_upload
+    displayName: Packer Build and Upload Image
+    jobs:
+      - job: packer_build_and_upload
+        displayName: Packer Build and Upload Image
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: packer-repo
+
+          - script: |
+              packer build -var 'resource_group_name=$(resourceGroup)' -var 'location=$(location)' -var 'storage_account_name=$(storageAccountName)' -var 'shared_image_gallery_name=$(sharedImageGalleryName)' -var 'image_definition_name=$(imageDefinitionName)' -var 'image_version=$(Build.BuildNumber)' packer-template.json
+            displayName: 'Run Packer Build'
+
+  - stage: create_vmss_and_runner_pool
+    displayName: Create VMSS and Runner Pool
+    jobs:
+      - job: create_vmss_and_runner_pool
+        displayName: Create VMSS and Runner Pool
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: TerraformInstaller@0
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: 'latest'
+
+          - checkout: self
+
+          - script: |
+              terraform init
+              terraform validate
+              terraform plan -out=tfplan
+            displayName: 'Terraform Init, Validate, Plan'
+
+          - script: |
+              terraform apply -auto-approve tfplan
+            displayName: 'Terraform Apply'
+
+          - checkout: packer-repo
+
+          - script: |
+              packer build -var 'resource_group_name=$(resourceGroup)' -var 'location=$(location)' -var 'storage_account_name=$(storageAccountName)' -var 'shared_image_gallery_name=$(sharedImageGalleryName)' -var 'image_definition_name=$(imageDefinitionName)' -var 'image_version=$(Build.BuildNumber)' packer-template.json
+            displayName: 'Run Packer Build'
+
+          - script: |
+              terraform apply -auto-approve
+            displayName: 'Terraform Apply (Create Runner Pool)'
+
