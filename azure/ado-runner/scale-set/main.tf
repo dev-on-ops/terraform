@@ -1,9 +1,16 @@
-# Stage 3: vmss.tf
-
+terraform {
+  required_providers {
+    azuredevops = {
+      source = "microsoft/azuredevops"
+      version = ">= 0.1.0"
+    }
+  }
+}
 provider "azurerm" {
   features {}
 }
-
+provider "azuredevops" {
+}
 variable "resource_group_name" {
   description = "The name of the resource group."
   type        = string
@@ -38,22 +45,33 @@ resource "azurerm_virtual_machine_scale_set" "example" {
   network_profile {
     # Define network settings here
   }
-}
 
-resource "azurerm_devops_agent_pool" "example" {
-  name             = "example-pool"
-  project_id       = "your-project-id"
-  description      = "Agent pool for VMSS"
-  auto_provision   = true
-  auto_update      = true
-  pool_type        = "automation"
-  pool_scope       = "project"
-  agent_count      = 2
-  agent_os         = "linux"
-  vm_resource_pool {
-    machine_type = "VirtualMachineScaleSets"
-    vmss_resource_group_name = var.resource_group_name
-    vmss_name = azurerm_virtual_machine_scale_set.example.name
+  extension {
+    name                 = "Microsoft.Compute.VMAccessAgent"
+    publisher            = "Microsoft.Compute"
+    type                 = "VMAccessAgent"
+    type_handler_version = "2.0"
+    auto_upgrade_minor_version = true
+
+    settings = <<SETTINGS
+    {
+        "enableAutomaticUpdates": true,
+        "protectedSettings": {
+            "username": "adminuser",
+            "password": "ExamplePassword123"
+        }
+    }
+    SETTINGS
   }
+
+  depends_on = [azurerm_shared_image.example]
 }
 
+resource "azuredevops_elastic_pool" "example" {
+  name                = "example-pool"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  size                = 2  # Number of agents in the pool
+  sku                 = "Standard_D2s_v3"
+  virtual_machine_scale_set_id = azurerm_virtual_machine_scale_set.example.id
+}
